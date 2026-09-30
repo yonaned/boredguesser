@@ -13,8 +13,34 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://boredguesser.yosen.me"), // change it with your actual domain latter after purchase
   title: "BoredGuesser",
-  description: "BoredGuesser is a fun and addictive game that challenges your guessing skills. Test your knowledge, compete with friends, and have a blast!",
+  description:
+    "BoredGuesser is a fun and addictive game that challenges your guessing skills. Test your knowledge, compete with friends, and have a blast!",
+  openGraph: {
+    title: "BoredGuesser",
+    description:
+      "BoredGuesser is a fun and addictive game that challenges your guessing skills. Test your knowledge, compete with friends, and have a blast!",
+    url: "https://boredguesser.yosen.me",
+    siteName: "BoredGuesser",
+    images: [
+      {
+        url: "/og-image.jpg", 
+        width: 1200,
+        height: 630,
+        alt: "BoredGuesser - Test your guessing skills",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BoredGuesser",
+    description:
+      "BoredGuesser is a fun and addictive game that challenges your guessing skills. Test your knowledge, compete with friends, and have a blast!",
+    images: ["/og-image.jpg"],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
