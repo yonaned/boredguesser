@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef } from "react";
 
 interface InteractiveEyeProps {
   className?: string;
@@ -18,14 +18,23 @@ export default function InteractiveEye({
   const containerRef = useRef<HTMLDivElement>(null);
   const pupilRef = useRef<SVGCircleElement>(null);
   const eyelidRef = useRef<SVGGElement>(null);
-  const [isBlinking, setIsBlinking] = useState(false);
 
-  // Position interpolation state for 60fps buttery movement
+  // Safe unique ID for SVG clip path (sanitized for SVG url references)
+  const rawId = useId();
+  const clipId = `eye-inner-clip-${rawId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
+
+  // Position interpolation state for 60fps movement
   const targetPos = useRef({ x: 0, y: 0 });
   const currentPos = useRef({ x: 0, y: 0 });
   const animFrameId = useRef<number | null>(null);
 
-  // Handle cursor / touch coordinates
+  // Blink timing state
+  const blinkStartTime = useRef<number | null>(null);
+
+  const triggerBlink = () => {
+    blinkStartTime.current = performance.now();
+  };
+
   useEffect(() => {
     const handleMove = (clientX: number, clientY: number) => {
       if (!containerRef.current) return;
@@ -64,11 +73,12 @@ export default function InteractiveEye({
     window.addEventListener("mouseleave", onReset);
     window.addEventListener("touchend", onReset);
 
-    // Smooth lerp render loop
-    const render = () => {
+    // Smooth render loop
+    const render = (time: number) => {
       currentPos.current.x += (targetPos.current.x - currentPos.current.x) * 0.12;
       currentPos.current.y += (targetPos.current.y - currentPos.current.y) * 0.12;
 
+      // 1. Move pupil
       if (pupilRef.current) {
         pupilRef.current.setAttribute(
           "transform",
@@ -76,12 +86,36 @@ export default function InteractiveEye({
         );
       }
 
+      // 2. Calculate blink progress (0 = fully open, 1 = fully shut)
+      let blinkAmount = 0;
+      if (blinkStartTime.current !== null) {
+        const elapsed = time - blinkStartTime.current;
+        const blinkDuration = 220;
+        if (elapsed < blinkDuration) {
+          const t = elapsed / blinkDuration;
+          if (t < 0.35) {
+            blinkAmount = Math.sin((t / 0.35) * (Math.PI / 2));
+          } else {
+            blinkAmount = Math.cos(((t - 0.35) / 0.65) * (Math.PI / 2));
+          }
+        } else {
+          blinkStartTime.current = null;
+        }
+      }
+
+      // 3. Eyelid position:
+      // Looking up lifts eyelid (-y), looking down droops it (+y)
+      const gazeLidY = currentPos.current.y * 0.45;
+      
+      // When closed during blink, slide the lid down to y = 145 (covers the pupil)
+      const closedLidY = 145;
+      const finalLidY = gazeLidY + blinkAmount * (closedLidY - gazeLidY);
+
       if (eyelidRef.current) {
-        // The upper eyelid & horizontal dividing bar move with vertical gaze (35% factor).
-        // This ensures looking "up" lifts the upper eyelid mask to reveal the eyeball/pupil,
-        // and looking "down" slightly droops the eyelid naturally.
-        const eyelidY = (currentPos.current.y * 0.35).toFixed(2);
-        eyelidRef.current.setAttribute("transform", `translate(0, ${eyelidY})`);
+        eyelidRef.current.setAttribute(
+          "transform",
+          `translate(0, ${finalLidY.toFixed(2)})`
+        );
       }
 
       animFrameId.current = requestAnimationFrame(render);
@@ -91,7 +125,7 @@ export default function InteractiveEye({
 
     // Natural occasional micro-blink
     const blinkInterval = setInterval(() => {
-      if (Math.random() > 0.4) {
+      if (Math.random() > 0.35) {
         triggerBlink();
       }
     }, 4500);
@@ -106,75 +140,73 @@ export default function InteractiveEye({
     };
   }, []);
 
-  const triggerBlink = () => {
-    setIsBlinking(true);
-    setTimeout(() => setIsBlinking(false), 200);
-  };
-
   return (
+    // Outer circular container with overflow-hidden ensures nothing can ever bleed out
     <div
       ref={containerRef}
       onClick={triggerBlink}
-      className={`relative select-none cursor-pointer transition-transform duration-150 ease-out active:scale-95 ${className}`}
-      style={{
-        transform: isBlinking ? "scaleY(0.08)" : "scaleY(1)",
-        transformOrigin: "center center",
-        transitionProperty: "transform",
-      }}
-      title="Click me!"
+      className={`relative aspect-square select-none cursor-pointer rounded-full overflow-hidden ${className}`}
+      title="Click me to blink!"
     >
       <svg
         viewBox="0 0 400 400"
-        className="w-full h-full drop-shadow-sm overflow-hidden"
+        className="w-full h-full drop-shadow-sm select-none"
       >
         <defs>
-          {/* Inner boundary clip so the pupil and eyelids never exceed the outer ring */}
-          <clipPath id="inner-eye-clip">
-            <circle cx="200" cy="200" r="162" />
+          {/* Static inner clip boundary: radius 172 matches the inside of the outer ring */}
+          <clipPath id={clipId}>
+            <circle cx="200" cy="200" r="172" />
           </clipPath>
         </defs>
 
         {/* 1. Eye White / Canvas Fill */}
-        <circle cx="200" cy="200" r="162" fill={bgColor} />
+        <circle cx="200" cy="200" r="172" fill={bgColor} />
 
-        {/* 2. Pupil Layer (Tracked and bounded inside the circle) */}
-        <g clipPath="url(#inner-eye-clip)">
+        {/* 2. Pupil Layer (Tracked and bounded inside the eye) */}
+        <g clipPath={`url(#${clipId})`}>
           <circle
             ref={pupilRef}
             cx="200"
             cy="200"
-            r="56"
+            r="58"
             fill={pupilColor}
           />
         </g>
 
-        {/* 3. Animating Eyelid Group (Moves vertically when looking up/down) */}
-        <g ref={eyelidRef} clipPath="url(#inner-eye-clip)">
-          {/* Eyelid mask (Covers the top half so the pupil only peeks under the bar) */}
-          <path
-            d="M 38 200 A 162 162 0 0 1 362 200 Z"
-            fill={bgColor}
-          />
+        {/* 3. Eyelid Layer:
+               - The outer <g> holds the STATIC clipPath (so it never moves)
+               - The inner <g ref={eyelidRef}> performs the vertical translation
+        */}
+        <g clipPath={`url(#${clipId})`}>
+          <g ref={eyelidRef}>
+            {/* Solid fill covering everything above the horizontal dividing line */}
+            <rect
+              x="0"
+              y="-400"
+              width="400"
+              height="600"
+              fill={bgColor}
+            />
 
-          {/* Horizontal Eyelid Bar */}
-          <line
-            x1="38"
-            y1="200"
-            x2="362"
-            y2="200"
-            stroke={accentColor}
-            strokeWidth="26"
-            strokeLinecap="round"
-          />
+            {/* Horizontal dividing line - trimmed by the static clip into the circle */}
+            <line
+              x1="0"
+              y1="200"
+              x2="400"
+              y2="200"
+              stroke={accentColor}
+              strokeWidth="28"
+            />
+          </g>
         </g>
 
-        {/* 4. Outer Circular Frame (Fixed foreground layer) */}
+        {/* 4. Outer Circular Frame (Drawn in the foreground on top of the edges) */}
         <circle
           cx="200"
           cy="200"
-          r="169"
+          r="186"
           stroke={accentColor}
-          strokeWidth="26"
+          strokeWidth="28"
           fill="none"
         />
       </svg>
