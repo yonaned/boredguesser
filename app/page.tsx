@@ -2,5 +2,9 @@ import { redirect } from "next/dist/client/components/navigation";
 
 
 export default function Home() {
-  redirect('/commingsoon'); 
+  if (1+1===2) {
+    redirect('/commingsoon'); 
+  } else {
+    redirect('/demolanding');
+  }
 }
