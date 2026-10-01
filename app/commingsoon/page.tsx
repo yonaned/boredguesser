@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { Bricolage_Grotesque } from "next/font/google";
-import InteractiveEye from "../components/InteractiveEye"; // adjust path if needed
+import { ArrowRight } from "@phosphor-icons/react";
+import InteractiveEye from "../components/InteractiveEye";
 
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -28,12 +31,13 @@ export default function ComingSoon() {
 
           <Link
             href="/commingsoon/beta"
-            className="group flex items-center gap-3 bg-[#2a2c2b] text-white font-medium text-base sm:text-lg px-6 py-3.5 rounded-xl shadow-sm hover:bg-black transition-all duration-200 active:scale-95 cursor-pointer mt-2"
+            className="group flex items-center gap-3 bg-[#2a2c2b] text-white font-medium text-base sm:text-lg px-6 py-3.5 rounded-full shadow-sm hover:bg-black transition-all duration-200 active:scale-95 cursor-pointer mt-2"
           >
             <span>Be a Beta Tester</span>
-            <span className="text-xl transition-transform duration-200 group-hover:translate-x-1">
-              &rarr;
-            </span>
+            <ArrowRight
+              size={20}
+              className="transition-transform duration-200 group-hover:translate-x-1"
+            />
           </Link>
         </div>
 
