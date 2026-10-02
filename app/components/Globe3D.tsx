@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import Globe, { GlobeMethods } from "react-globe.gl";
 import { feature } from "topojson-client";
+import { MeshPhongMaterial } from "three";
 
 export interface GuessRecord {
   id: string;
@@ -22,6 +23,16 @@ export default function Globe3D({ guesses, focusedLocation }: Globe3DProps) {
   const [countriesGeoJson, setCountriesGeoJson] = useState<any[]>([]);
   const [dimensions, setDimensions] = useState({ width: 600, height: 600 });
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Globe surface material matching the website background (#f0f3e8)
+  const globeMaterial = useMemo(() => {
+    return new MeshPhongMaterial({
+      color: "#f0f3e8",
+      emissive: "#20221e",
+      emissiveIntensity: 0.08,
+      shininess: 12,
+    });
+  }, []);
 
   // Resize listener
   useEffect(() => {
@@ -60,39 +71,26 @@ export default function Globe3D({ guesses, focusedLocation }: Globe3DProps) {
   }, [focusedLocation]);
 
   return (
-    <div
-      ref={containerRef}
-      className="relative w-full h-[420px] sm:h-[500px] lg:h-[620px] rounded-3xl overflow-hidden bg-[#0d131f] shadow-2xl flex items-center justify-center cursor-grab active:cursor-grabbing border border-[#1a1a1a]/15"
-    >
-      <Globe
-        ref={globeRef}
-        width={dimensions.width}
-        height={dimensions.height}
-        backgroundColor="rgba(0, 0, 0, 0)"
-        globeImageUrl="//unpkg.com/three-globe/example/img/earth-dark.jpg"
-        polygonsData={countriesGeoJson}
-        polygonGeoJsonGeometry="geometry"
-        polygonAltitude={(d: any) => (guesses[String(d.id)] ? 0.035 : 0.005)}
-        polygonCapColor={(d: any) => {
-          const guess = guesses[String(d.id)];
-          return guess ? guess.color : "#334155"; // Guessed heatmap color or default land color
-        }}
-        polygonSideColor={() => "rgba(0, 0, 0, 0.25)"}
-        polygonStrokeColor={() => "#0f172a"}
-        polygonLabel={({ properties: d }: any) => {
-          const countryId = String(d?.id);
-          const guess = guesses[countryId];
-          return `
-            <div style="background:#111827; color:#fff; padding:6px 12px; border-radius:8px; font-size:12px; font-family:sans-serif; border: 1px solid rgba(255,255,255,0.2);">
-              <b>${d?.name || "Country"}</b>
-              ${guess ? `<br/><span style="color:${guess.color};">${guess.distanceKm === 0 ? "Correct!" : `${guess.distanceKm.toLocaleString()} km`}</span>` : ""}
-            </div>
-          `;
-        }}
-        showAtmosphere={true}
-        atmosphereColor="#38bdf8"
-        atmosphereAltitude={0.16}
-      />
-    </div>
-  );
-}
+  <div
+    ref={containerRef}
+    className="relative w-full h-[420px] sm:h-[500px] lg:h-[620px] rounded-3xl overflow-hidden bg-[#f0f3e8] shadow-inner flex items-center justify-center cursor-grab active:cursor-grabbing border border-[#1a1a1a]/20"
+  >
+    <Globe
+      ref={globeRef}
+      width={dimensions.width}
+      height={dimensions.height}
+      backgroundColor="rgba(0, 0, 0, 0)"
+      globeMaterial={globeMaterial}
+      polygonsData={countriesGeoJson}
+      polygonGeoJsonGeometry="geometry"
+      polygonAltitude={(d: any) => (guesses[String(d.id)] ? 0.035 : 0.006)}
+      polygonCapColor={(d: any) => {
+        const guess = guesses[String(d.id)];
+        return guess ? guess.color : "#d8dec8";
+      }}
+      polygonSideColor={() => "rgba(26, 26, 26, 0.18)"}
+      polygonStrokeColor={() => "#1a1a1a"}
+      showAtmosphere={false}
+    />
+  </div>
+);}
