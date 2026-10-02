@@ -81,7 +81,7 @@ export default function GamesDashboard() {
       : GAMES.filter((game) => game.category === activeCategory);
 
   return (
-    <div className={`${bricolage.className} min-h-screen bg-[#e8e3d5] text-[#1a1a1a]`}>
+    <div className={`${bricolage.className} min-h-screen bg-[#f0f3e8] text-[#1c1e1d]`}>
       {/* Top Header Navbar */}
       <header className="border-b border-[#1a1a1a]/15 px-6 py-4 sm:px-12">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
