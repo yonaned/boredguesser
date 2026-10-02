@@ -1,3 +1,5 @@
+// app/games/country-proximity/geo.ts
+
 export function getHaversineDistanceKm(
   lat1: number,
   lon1: number,
@@ -19,8 +21,13 @@ export function getHaversineDistanceKm(
   return Math.round(R * c);
 }
 
-export function getDistanceColor(distanceKm: number, isWinner: boolean): string {
+export function getDistanceColor(
+  distanceKm: number,
+  isWinner: boolean,
+  isNeighbor: boolean = false
+): string {
   if (isWinner) return "#10b981"; // Emerald Green for target hit
+  if (isNeighbor) return "#a855f7"; // Vibrant Purple for direct land neighbors
   if (distanceKm < 1000) return "#7f1d1d"; // Boiling Dark Red
   if (distanceKm < 2500) return "#dc2626"; // Crimson
   if (distanceKm < 4500) return "#f97316"; // Bright Orange
