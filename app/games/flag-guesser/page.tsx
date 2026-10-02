@@ -16,7 +16,6 @@ import {
 } from "@phosphor-icons/react";
 // @ts-expect-error canvas-confetti untyped import
 import confetti from "canvas-confetti";
-import * as Flags from "country-flag-icons/react/3x2";
 import { FLAG_COUNTRIES, FlagCountry } from "./countries";
 
 const bricolage = Bricolage_Grotesque({
@@ -41,7 +40,6 @@ export default function FlagGuesserPage() {
   const [inputValue, setInputValue] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Load high score
   useEffect(() => {
     const saved = localStorage.getItem("boredguesser_flag_best");
     if (saved) setBestStreak(parseInt(saved, 10));
@@ -52,14 +50,12 @@ export default function FlagGuesserPage() {
     return FLAG_COUNTRIES.filter((c) => c.continent === selectedContinent);
   }, [selectedContinent]);
 
-  // Pick a fresh country + 3 distractors
   const nextQuestion = useCallback(
     (customPool = pool) => {
       if (customPool.length < 4) return;
       const target = customPool[Math.floor(Math.random() * customPool.length)];
       setCurrentCountry(target);
 
-      // Pick 3 unique distractors (prefer same continent for smart difficulty)
       const distractors = customPool
         .filter((c) => c.code !== target.code)
         .sort(() => Math.random() - 0.5)
@@ -124,7 +120,6 @@ export default function FlagGuesserPage() {
     }
   };
 
-  // Keyboard support (1, 2, 3, 4 for options)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (gameMode !== "choice" || answerState !== "idle" || isGameOver) return;
@@ -137,7 +132,6 @@ export default function FlagGuesserPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [options, answerState, isGameOver, gameMode]);
 
-  // Autocomplete suggestions for typing mode
   const matchingSuggestions = useMemo(() => {
     const clean = inputValue.trim().toLowerCase();
     if (!clean || answerState !== "idle") return [];
@@ -157,16 +151,8 @@ export default function FlagGuesserPage() {
     }
   };
 
-  // Resolve vector flag component
-  const FlagComponent = currentCountry
-    ? (Flags as Record<string, React.ComponentType<{ className?: string; title?: string }>>)[
-        currentCountry.code
-      ]
-    : null;
-
   return (
     <div className={`${bricolage.className} min-h-screen bg-[#f0f3e8] text-[#1c1e1d] px-4 py-8 md:px-12`}>
-      {/* Header */}
       <header className="max-w-5xl mx-auto flex items-center justify-between mb-8">
         <Link
           href="/dashboard"
@@ -181,15 +167,13 @@ export default function FlagGuesserPage() {
       </header>
 
       <main className="max-w-4xl mx-auto flex flex-col gap-6">
-        {/* Top Controls & Category Filter */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Continent Filter Pills */}
           <div className="flex flex-wrap items-center gap-2">
             {CONTINENTS.map((cont) => (
               <button
                 key={cont}
                 onClick={() => setSelectedContinent(cont)}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   selectedContinent === cont
                     ? "bg-[#1a1a1a] text-white border border-[#1a1a1a]"
                     : "bg-white/60 text-[#4a5048] border border-[#1a1a1a]/20 hover:border-[#1a1a1a]"
@@ -200,11 +184,10 @@ export default function FlagGuesserPage() {
             ))}
           </div>
 
-          {/* Mode Switcher */}
           <div className="bg-white/70 border border-[#1a1a1a]/20 p-1 rounded-full flex items-center gap-1 text-xs font-semibold">
             <button
               onClick={() => setGameMode("choice")}
-              className={`px-3 py-1.5 rounded-full transition-all ${
+              className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
                 gameMode === "choice" ? "bg-[#1a1a1a] text-white shadow-sm" : "text-[#4a5048]"
               }`}
             >
@@ -212,7 +195,7 @@ export default function FlagGuesserPage() {
             </button>
             <button
               onClick={() => setGameMode("type")}
-              className={`px-3 py-1.5 rounded-full transition-all ${
+              className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
                 gameMode === "type" ? "bg-[#1a1a1a] text-white shadow-sm" : "text-[#4a5048]"
               }`}
             >
@@ -221,7 +204,7 @@ export default function FlagGuesserPage() {
           </div>
         </div>
 
-        {/* Stats Row */}
+        {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-[#e8e3d5] p-3.5 rounded-2xl border border-[#1a1a1a]/15 flex items-center gap-3">
             <Flame size={26} className="text-[#ff1a53]" />
@@ -257,9 +240,8 @@ export default function FlagGuesserPage() {
           </div>
         </div>
 
-        {/* Flag Showcase Box */}
+        {/* Flag Card */}
         <div className="bg-white/80 border border-[#1a1a1a]/20 rounded-3xl p-6 sm:p-10 shadow-sm flex flex-col items-center justify-center relative overflow-hidden">
-          {/* Status Badge */}
           {answerState === "correct" && (
             <div className="absolute top-4 bg-emerald-500 text-white font-bold text-xs px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm animate-bounce">
               <Check size={16} weight="bold" />
@@ -274,17 +256,15 @@ export default function FlagGuesserPage() {
             </div>
           )}
 
-          {/* SVG Vector Flag Frame */}
-          <div className="w-full max-w-sm sm:max-w-md aspect-[3/2] rounded-2xl overflow-hidden border border-[#1a1a1a]/20 shadow-xl my-4 bg-slate-100 flex items-center justify-center transition-transform duration-300">
-            {FlagComponent ? (
-              <FlagComponent className="w-full h-full object-cover" title={currentCountry?.name} />
-            ) : currentCountry ? (
+          {/* FlagCDN SVG */}
+          <div className="w-full max-w-sm sm:max-w-md aspect-[3/2] rounded-2xl overflow-hidden border border-[#1a1a1a]/20 shadow-xl my-4 bg-slate-100 flex items-center justify-center">
+            {currentCountry && (
               <img
-                src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${currentCountry.code}.svg`}
+                src={`https://flagcdn.com/${currentCountry.code.toLowerCase()}.svg`}
                 alt={currentCountry.name}
                 className="w-full h-full object-cover"
               />
-            ) : null}
+            )}
           </div>
 
           <p className="text-sm font-medium text-[#4a5048] mt-2">
@@ -292,11 +272,9 @@ export default function FlagGuesserPage() {
           </p>
         </div>
 
-        {/* Interaction Panel */}
         {!isGameOver ? (
           <div>
             {gameMode === "choice" ? (
-              /* 4-Option Multiple Choice Grid */
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {options.map((option, index) => {
                   let btnStyle =
@@ -317,7 +295,7 @@ export default function FlagGuesserPage() {
                       key={option.code}
                       onClick={() => handleGuess(option)}
                       disabled={answerState !== "idle"}
-                      className={`group flex items-center justify-between p-4 rounded-2xl border text-left font-semibold text-base transition-all duration-150 active:scale-[0.98] ${btnStyle}`}
+                      className={`group flex items-center justify-between p-4 rounded-2xl border text-left font-semibold text-base transition-all duration-150 active:scale-[0.98] cursor-pointer ${btnStyle}`}
                     >
                       <span className="flex items-center gap-3">
                         <span className="w-7 h-7 rounded-lg bg-[#f0f3e8] border border-[#1a1a1a]/15 text-xs flex items-center justify-center text-[#1a1a1a] font-bold group-hover:bg-[#1a1a1a] group-hover:text-white transition-colors">
@@ -330,7 +308,6 @@ export default function FlagGuesserPage() {
                 })}
               </div>
             ) : (
-              /* Type-to-guess Input with Autocomplete */
               <form onSubmit={handleTypeSubmit} className="relative">
                 <div className="relative flex items-center">
                   <input
@@ -349,7 +326,7 @@ export default function FlagGuesserPage() {
                   <button
                     type="submit"
                     aria-label="Submit"
-                    className="absolute right-2.5 w-10 h-10 rounded-full bg-[#1a1a1a] text-white flex items-center justify-center hover:bg-[#ff1a53] transition-colors"
+                    className="absolute right-2.5 w-10 h-10 rounded-full bg-[#1a1a1a] text-white flex items-center justify-center hover:bg-[#ff1a53] transition-colors cursor-pointer"
                   >
                     <PaperPlaneRight size={18} weight="fill" />
                   </button>
@@ -362,7 +339,7 @@ export default function FlagGuesserPage() {
                         key={c.code}
                         type="button"
                         onClick={() => handleGuess(c)}
-                        className="w-full text-left px-5 py-3 text-sm hover:bg-[#f0f3e8] transition-colors flex items-center justify-between border-b last:border-b-0 border-[#1a1a1a]/10"
+                        className="w-full text-left px-5 py-3 text-sm hover:bg-[#f0f3e8] transition-colors flex items-center justify-between border-b last:border-b-0 border-[#1a1a1a]/10 cursor-pointer"
                       >
                         <span className="font-semibold text-[#1a1a1a]">{c.name}</span>
                         <span className="text-xs text-stone-400">Select</span>
@@ -374,7 +351,6 @@ export default function FlagGuesserPage() {
             )}
           </div>
         ) : (
-          /* Game Over Modal / Card */
           <div className="bg-white border border-[#1a1a1a]/20 rounded-3xl p-8 text-center space-y-4 shadow-lg">
             <div className="w-16 h-16 bg-[#ff1a53]/15 text-[#ff1a53] rounded-full flex items-center justify-center mx-auto">
               <Sparkle size={32} weight="fill" />
@@ -387,7 +363,7 @@ export default function FlagGuesserPage() {
 
             <button
               onClick={startNewGame}
-              className="inline-flex items-center gap-2 bg-[#1a1a1a] hover:bg-black text-white font-medium px-6 py-3.5 rounded-full text-base transition-colors"
+              className="inline-flex items-center gap-2 bg-[#1a1a1a] hover:bg-black text-white font-medium px-6 py-3.5 rounded-full text-base transition-colors cursor-pointer"
             >
               <ArrowClockwise size={18} />
               <span>Play Again</span>

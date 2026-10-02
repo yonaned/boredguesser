@@ -11,12 +11,10 @@ import {
   Check,
   EyeSlash,
   Eye,
-  Lightning,
   Sparkle,
 } from "@phosphor-icons/react";
-// @ts-expect-error untyped canvas-confetti
+// @ts-expect-error canvas-confetti untyped import
 import confetti from "canvas-confetti";
-import * as Flags from "country-flag-icons/react/3x2";
 import { ALL_FLAGS, WorldFlag } from "./countries";
 
 const bricolage = Bricolage_Grotesque({
@@ -33,13 +31,13 @@ export default function FlagEliminationPage() {
   const [eliminatedCodes, setEliminatedCodes] = useState<Set<string>>(new Set());
   const [hideEliminated, setHideEliminated] = useState(false);
   const [lastEliminated, setLastEliminated] = useState<WorldFlag | null>(null);
-  const [timeLeft, setTimeLeft] = useState(900); // 15-minute timer
+  const [timeLeft, setTimeLeft] = useState(900); // 15-minute countdown (in seconds)
   const [isGameOver, setIsGameOver] = useState(false);
   const [isTimerRunning, setIsTimerRunning] = useState(true);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Active pool filtered by continent
+  // Active pool filtered by selected continent
   const activePool = useMemo(() => {
     if (selectedContinent === "All") return ALL_FLAGS;
     return ALL_FLAGS.filter((f) => f.continent === selectedContinent);
@@ -48,7 +46,7 @@ export default function FlagEliminationPage() {
   const remainingCount = activePool.length - eliminatedCodes.size;
   const progressPercent = Math.round((eliminatedCodes.size / activePool.length) * 100) || 0;
 
-  // Countdown timer
+  // Countdown timer effect
   useEffect(() => {
     if (!isTimerRunning || timeLeft <= 0 || isGameOver) return;
     const interval = setInterval(() => {
@@ -82,7 +80,7 @@ export default function FlagEliminationPage() {
     const normalized = value.trim().toLowerCase();
     if (!normalized) return;
 
-    // Check if matches any uneliminated country in the active pool
+    // Check against active, non-eliminated countries in this continent view
     const matched = activePool.find(
       (country) =>
         !eliminatedCodes.has(country.code) &&
@@ -94,13 +92,13 @@ export default function FlagEliminationPage() {
       const nextSet = new Set(eliminatedCodes).add(matched.code);
       setEliminatedCodes(nextSet);
       setLastEliminated(matched);
-      setInputValue(""); // Auto-clear input on instant elimination
+      setInputValue(""); // Instantly clear input on match
 
       if (nextSet.size === activePool.length) {
         setIsGameOver(true);
         setIsTimerRunning(false);
         confetti({
-          particleCount: 150,
+          particleCount: 160,
           spread: 80,
           origin: { y: 0.5 },
         });
@@ -132,13 +130,13 @@ export default function FlagEliminationPage() {
         </div>
       </header>
 
-      {/* Sticky Controller Panel */}
+      {/* Sticky Controller & Typing Bar */}
       <div className="sticky top-0 z-40 bg-[#f0f3e8]/95 backdrop-blur-md border-b border-[#1a1a1a]/15 px-4 py-4 md:px-12 shadow-sm">
         <div className="max-w-7xl mx-auto flex flex-col gap-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                <span>Flag Elimination</span>
+                <span>World Flags Elimination</span>
                 <span className="text-xs bg-[#ff1a53] text-white px-2.5 py-0.5 rounded-full font-bold">
                   {remainingCount} Left
                 </span>
@@ -175,15 +173,15 @@ export default function FlagEliminationPage() {
 
               <button
                 onClick={restartGame}
-                className="p-2 rounded-2xl bg-[#1a1a1a] hover:bg-black text-white transition-colors"
-                title="Restart"
+                className="p-2 rounded-2xl bg-[#1a1a1a] hover:bg-black text-white transition-colors cursor-pointer"
+                title="Restart Game"
               >
                 <ArrowClockwise size={18} />
               </button>
             </div>
           </div>
 
-          {/* Typing Input Bar & Last Eliminated Indicator */}
+          {/* Input Bar & Notification */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
             <div className="md:col-span-8 relative">
               <input
@@ -193,12 +191,12 @@ export default function FlagEliminationPage() {
                 onChange={handleInputChange}
                 disabled={isGameOver}
                 autoFocus
-                placeholder="Type country name (e.g. Canada, Brazil, Japan, Ethiopia)..."
+                placeholder="Type country name (e.g. France, Japan, Brazil, Ethiopia)..."
                 className="w-full px-6 py-3.5 rounded-full border border-[#1a1a1a] bg-white text-base font-medium outline-none focus:ring-2 focus:ring-[#ff1a53] shadow-sm transition-all placeholder:text-[#8a8f88]"
               />
             </div>
 
-            {/* Notification Chip for Last Eliminated Country */}
+            {/* Indicator of Most Recently Eliminated Country */}
             <div className="md:col-span-4 flex items-center justify-between sm:justify-start gap-2 bg-white/70 border border-[#1a1a1a]/15 px-4 py-2.5 rounded-full text-xs font-semibold">
               <span className="text-[#555a53] uppercase tracking-wider text-[10px]">Last:</span>
               {lastEliminated ? (
@@ -223,7 +221,7 @@ export default function FlagEliminationPage() {
                   setEliminatedCodes(new Set());
                   setLastEliminated(null);
                 }}
-                className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all ${
+                className={`px-3.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   selectedContinent === cont
                     ? "bg-[#1a1a1a] text-white border border-[#1a1a1a]"
                     : "bg-white/60 text-[#4a5048] border border-[#1a1a1a]/20 hover:border-[#1a1a1a]"
@@ -238,7 +236,7 @@ export default function FlagEliminationPage() {
 
       {/* Main Flags Grid */}
       <main className="max-w-7xl mx-auto px-4 md:px-12 mt-8">
-        {/* Victory Card */}
+        {/* Victory Celebration Card */}
         {isGameOver && eliminatedCodes.size === activePool.length && (
           <div className="mb-8 bg-emerald-500 text-white rounded-3xl p-8 text-center space-y-3 shadow-xl">
             <Sparkle size={48} weight="fill" className="mx-auto" />
@@ -249,7 +247,7 @@ export default function FlagEliminationPage() {
             </p>
             <button
               onClick={restartGame}
-              className="mt-2 bg-[#1a1a1a] hover:bg-black text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-colors inline-flex items-center gap-2"
+              className="mt-2 bg-[#1a1a1a] hover:bg-black text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-colors inline-flex items-center gap-2 cursor-pointer"
             >
               <ArrowClockwise size={16} />
               <span>Play Again</span>
@@ -265,9 +263,7 @@ export default function FlagEliminationPage() {
               return null;
             }
 
-            const FlagComponent = (
-              Flags as Record<string, React.ComponentType<{ className?: string; title?: string }>>
-            )[country.code];
+            const flagSvgUrl = `https://flagcdn.com/${country.code.toLowerCase()}.svg`;
 
             return (
               <div
@@ -285,17 +281,14 @@ export default function FlagEliminationPage() {
                   </div>
                 )}
 
-                {/* Flag SVG Frame */}
+                {/* Flag SVG Render */}
                 <div className="w-full aspect-[3/2] rounded-lg overflow-hidden border border-black/10 shadow-xs bg-slate-100 flex items-center justify-center">
-                  {FlagComponent ? (
-                    <FlagComponent className="w-full h-full object-cover" title={country.name} />
-                  ) : (
-                    <img
-                      src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${country.code}.svg`}
-                      alt={country.name}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
+                  <img
+                    src={flagSvgUrl}
+                    alt={isEliminated ? country.name : "Flag"}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
                 </div>
 
                 {/* Country Name (hidden until eliminated) */}
